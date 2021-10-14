@@ -1,0 +1,96 @@
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.backends import default_backend
+
+# Public exponent is hardcoded in the contract.
+PUBLIC_EXPONENT = 17
+HEXLIST = '0123456789abcdef'
+
+# Padding to prepend to bet randomness.
+PADDING = ['0x0001ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff',
+           '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff',
+           '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff',
+           '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff',
+           '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff',
+           '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff',
+           '0xffffffffffffffffffffffff003031300d060960864801650304020105000420']
+# Example message to sign.
+EXAMPLE = '0x0000000000000000000000000000000000000000000000000000000000abc123'
+
+# Create a 2048 bit RSA key.
+def CreateKey():
+  key = rsa.generate_private_key(backend=default_backend(), public_exponent=PUBLIC_EXPONENT,
+                                 key_size=2048)
+  return key
+
+# Turn an integer into hex (array or string)
+def IntegerToHex(n, as_array=True):
+  n_array = []
+  for i in range(8):
+    block = []
+    for j in range(64):
+      block.append(HEXLIST[n % 16])
+      n = n // 16
+    n_array.append(''.join(block[::-1]))
+  if as_array:
+    return '[0x' + ', 0x'.join(n_array[::-1]) + ']'
+  else:
+    return '0x' + ''.join(n_array[::-1])
+
+# Turn hex (array or string) into integer.
+def HexToInteger(hex):
+  integer = 0
+  exponent = 1
+  if type(hex) == list:
+    hex = str(hex)
+  hex = hex.replace('[', '').replace(']', '').replace('0x', '').replace(',', '').replace(' ', '').replace('"', '').replace("'", '')
+  for char in hex[::-1]:
+    integer += exponent * HEXLIST.index(char)
+    exponent *= 16
+  return integer
+
+# Sign bet randomness hash.
+def Sign(n, d, hash, add_padding=True):
+  if add_padding:
+    padded_hash = list(PADDING)
+    padded_hash.append(hash)
+    padded_hash = [h[2:] for h in padded_hash]
+  else:
+    padded_hash = hash
+  padded_hash = '0x' + ''.join(padded_hash)
+  message = HexToInteger(padded_hash)
+  if type(n) != int:
+    n = HexToInteger(n)
+  return pow(message, d, n)
+
+def _PrintKey(key):
+  print(f"""--- PUBLIC MODULUS AS INTEGER ---
+n: {key.private_numbers().p * key.private_numbers().q}
+
+--- PRIVATE KEY FOR SIGNING: SAVE AND DO NOT SHARE ---
+d: {key.private_numbers().d}
+
+--- PUBLIC MODULUS AS BYTES32[8] ARRAY FOR PASTING INTO HOUSE MODULUS ---
+{IntegerToHex(key.private_numbers().p * key.private_numbers().q)}
+""")
+
+# Create and print a new key, also verify that signing works.
+def CreateKeyAndVerifySigning():
+  key = CreateKey()
+  _PrintKey(key)
+  public_modulus = key.private_numbers().p * key.private_numbers().q
+  private_exponent = key.private_numbers().d
+  # Sign example message.
+  signed = IntegerToHex(Sign(public_modulus, private_exponent, EXAMPLE))
+  # Recover message from signature.
+  recovered = IntegerToHex(Sign(public_modulus, PUBLIC_EXPONENT, signed,
+                                add_padding=False))
+  # Verify that signature matches to show how to use code.
+  recovered = recovered.replace('[', '').replace(']', '').replace(' ', '').split(',')
+  assert recovered[7] == EXAMPLE
+  for i in range(7):
+    assert recovered[i] == PADDING[i]
+  print('\nKey verified.')
+
+
+CreateKeyAndVerifySigning()

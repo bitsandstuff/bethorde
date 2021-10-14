@@ -1,0 +1,70 @@
+.round-div {
+  border: 2px solid #88ddff;
+  border-radius: 1.5em;
+  margin: 0.7em;
+  padding: 1em;
+}
+
+.navselect {
+  display:  block;
+  background-color: #cdffcd;
+  border-radius: 0.5em;
+  color: #333333;
+}
+
+.clickable {
+  display: block;
+  cursor: pointer;
+  color: inherit;
+  text-decoration: inherit;
+}
+
+.error_form {
+  background-color: #FFDDDD;
+}
+
+.modulus {
+  word-wrap: break-word;
+  font-size: 0.7em;
+}
+
+em {
+  word-wrap: break-word;
+}
+
+h1 {
+  font-family: sans-serif;
+  color: #005500;
+  font-size: 3em;
+}
+
+#version {
+  font-size: 0.3em;
+  color: #007799;
+  padding-left:  1em;
+}
+
+#header {
+  padding-top: 1em;
+  padding-bottom: 1em;
+}
+
+#logo {
+  height: 8em;
+  padding-right: 2em;
+}
+
+#decentralised {
+  padding-top: 0.8em;
+  color: #005500;
+}
+
+#trust {
+  color: #777777;
+}
+
+#footer {
+  text-align: center;
+  font-size: 0.9em;
+  color: #777777;
+}

@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="icon" href="media/bethorde_logo.svg" type="image/svg+xml">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="js/abi.js"></script>
+  <script src="js/math.js"></script>
+  <script src="js/interact.js"></script>
+  <script src="js/control.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+    
+</head>
+
+<body>
+  <div class="container" id="content_div">
+    <div class="row" id="header">
+      <div class="col-1">
+        <img id="logo" src="static/eth3.svg" />
+      </div>
+      <div class="col-3">
+        <h1>Bet<br />Horde</h1>
+        <p id="version">v1.0</p>
+      </div>
+      <div class="col-8">
+        <h2 id="decentralised">Truly decentralised bets.</h2>
+        <p id="trust">No trust. No oracles. Provably random.</p>
+      </div>
+    </div>
+
+    <!-- Instruction container -->
+    <div>
+      <div class="row">
+        <div class="col-xl">
+          <nav class="nav">
+            <a class="nav-link" onclick="HideInfos();" id="documentation">
+              Info:&nbsp;&nbsp;
+            </a>
+            <a class="nav-link clickable" id="overview_nav"
+             onclick="ToggleInfos('#overview');">
+              Overview
+            </a>
+            <a class="nav-link clickable" id="players_nav"
+             onclick="ToggleInfos('#players');">
+              Players
+            </a>
+            <a class="nav-link clickable" id="houses_nav"
+             onclick="ToggleInfos('#houses');">
+              Houses
+            </a>
+            <a class="nav-link clickable" id="details_nav"
+             onclick="ToggleInfos('#details');">
+              Details
+            </a>
+          </nav>
+        </div>
+      </div>
+      <div class="row" id="documentation_cell">
+        <div class="col-xl">
+          <div id="overview_info">
+            <p>
+              Any Ethereum wallet can use BetHorde to place or accept bets.
+              Public key cryptography generates fair random outcomes.
+            </p>
+            <p>
+              <b>Players</b> bet against <b>Houses</b>, not against BetHorde.
+            </p>
+            <h5>Takes</h5>
+            <p>
+              Takes only apply to player winnings:
+              <ul>
+                <li>0&#37; &leq; House take &leq; 10&#37;.</li>
+                <li>Contract take:
+                  <ul>
+                    <li>1.0%:&nbsp;&nbsp;Winnings &lt; 0.1ETH</li>
+                    <li>0.5%:&nbsp;&nbsp;0.1ETH &leq; Winnings &lt; 1ETH</li>
+                    <li>0.2%:&nbsp;&nbsp;1ETH &leq; Winnings &lt; 5ETH</li>
+                    <li>0.1%:&nbsp;&nbsp;5ETH &leq; Winnings</li>
+                  </ul>
+                </li>
+                <li>
+                  If a bet is not resolved by a house within 24 hours, any
+                  address can force a player win and receive the <b>house take</b>.
+                </li>
+              </ul>
+            </p>
+            <h5>Viewing Bets</h5>
+            <p>
+              <b>View Bet</b> button can be used to see details on bets that have
+              not been resolved yet. From this view, bets can also be resolved by
+              houses (or forced if they are over 24 hours old).
+            </p>
+            <p>
+              Navigation links within bet view move through bets placed against a
+              particular house.
+            </p>
+            <h5>Randomness:</h5>
+            <p>
+              Players select the <b>odds</b> of winning and specify the
+              <b>amount</b> to bet. Player has a <b>1 / odds</b> chance of winning
+              and winnings equal <b>amount &times; odds</b> (minus house and
+              contract takes).
+            </p>
+            <p>
+              The protocol below is used to generate random values:
+              <ol>
+                <li>Houses share public part of RSA key before receiving bets.</li>
+                <li>
+                  Players provide a random value when placing bets.
+                </li>
+                <li>House signs random value with private part of RSA key.</li>
+                <li>Public part of RSA key used to verify signature.</li>
+                <li>Signature is used to generate a random outcome.</li>
+              </ol>
+              See <a href="https://etherscan.io/address/0x30410fab6d367e11839c00ad93eb357e3066ada8" target="_blank">contract</a> for details.
+            </p>
+          </div>
+          <div id="players_info">
+            <p>
+              <b>Players</b> place bets by selecting a house and specifying:
+              <ul>
+                <li>Amount: how much to bet.</li>
+                <li>
+                  Odds: bets have a <b>1 / odds</b> chance of winning a prize of
+                  <b>amount &times; odds</b>.
+                  <ul>
+                    <li>
+                      2 &leq; odds &leq; 1 million.
+                    </li>
+                    <li>
+                      Amount &times; odds must not exceed house <b>maximum
+                      loss</b> or <b>balance</b>.
+                    </li>
+                  </ul>
+                </li>
+                <li>Randomness: a random hex string to include with the bet.</li>
+                <li>
+                  Nonce: must increase with each bet to prevent reuse of winning
+                  randomness values.
+                </li>
+                <li>
+                  Top up: ETH to add to player account. Bet amount is deducted
+                  from player account after this top up is added.
+                </li>
+              </ul>
+            </p>
+            <h5>Bet Outcome</h5>
+            <p>
+              Houses have 24 hours to resolve bets by providing a cryptographic
+              signature.
+            </p>
+            <p>
+              Bets that are not resolved within 24 hours can be <b>forced</b> by
+              any ETH wallet. Forcing is an automatic win for the player. House
+              take on a forced bet goes to the wallet that forced it, instead of
+              the house. It is stored in a house account for that wallet.
+            </p>
+            <h5>Last Low Balance Time</h5>
+            <p>
+              Be cautious of houses with recent last low balance time (houses can
+              'front-run' winning bets by betting against themselves to run out of
+              funds for accepting bets). Last low balance time records last
+              time house balance was below maximum loss after a bet was placed.
+            </p>
+          </div>
+          <div id="houses_info">
+            <p>
+              Houses are opened with the following parameters:
+              <ul>
+                <li>RSA Modulus: public part of RSA key for randomness.</li>
+                <li>Maximum Loss: maximum that house can lose on one bet.</li>
+                <li>Minimum Bet: minimum bet amount that house accepts.</li>
+                <li>Take: % of winnings that house keeps if player wins.</li>
+                <li>Funding can be added at creation or at later times.</li>
+              </ul>
+            </p>
+            <p>
+              Funding can be added at any time. Withdrawing funds and adjusting
+              parameters can only happen when a house is paused and all bets have
+              been resolved. To prevent houses from pausing to avoid incoming
+              winning bets, a pause only starts 250 blocks after it has been
+              requested.
+            </p>
+            <h5>RSA Keys</h5>
+            <p>
+              Houses decide the outcome of bets by signing a bet randomness value
+              with the private part of a 2048-bit RSA key. Houses provide public
+              part of this key in advance, so that only one signature is valid.
+            </p>
+            <p>
+              This <a href="media/keys.txt" target="_blank">script</a> can be used
+              to securely generate RSA keys in Python and also includes code for
+              signing with these keys. Bets can be signed by providing the private
+              key to the site, or by directly supplying the signed value.
+            </p>
+            <p>
+              Public part of generated RSA key needs to be provided to BetHorde,
+              but the private part should be saved and kept secret.
+            </p>
+            <p>
+              Note: if house does not sign bet <b>within 24 hours</b>, any ETH
+              wallet can force a bet (player win) and claim house take.
+            </p>
+            <h5>House Order</h5>
+            <p>
+              Houses addresses are stored in a list and this site displays the
+              first contract in the list by default. Each time a house resolves
+              a bet, it advances one place towards the front, so the most active
+              houses will be at the front of the list.
+            </p>
+          </div>
+          <div id="details_info">
+            <p>
+              Web UI is not needed to interact with
+              <a href="https://etherscan.io/address/0x30410fab6d367e11839c00ad93eb357e3066ada8" target="_blank">
+                BetHorde
+              </a>. A
+              <a href="https://ropsten.etherscan.io/address/0x90264fe0d57258bf1773a2a8e4853be3bc800a18" target="_blank">
+                copy
+              </a> of the contract is on Ropsten for development and testing.
+            <p>
+              Devs can be reached by contacting
+              <a href="https://reddit.com/u/bethorde">u/bethorde</a> and donations
+              are welcome.
+            </p>
+            <p>
+              Smart contract was extensively tested (test code may be released
+              if there is interest). Web UI might have minor issues. Comments are
+              welcome and users are welcome to create additional UIs for this
+              contract.
+            </p>
+            <h5>Cheating</h5>
+            <p>
+              Smart contract prevents several forms of cheating:
+              <ul>
+                <li>
+                  Houses supply bad signatures for bets:
+                  <ul>
+                    <li>
+                      Houses commit to RSA keys in advance, so only one
+                      signature is valid for a given bet.
+                    </li>
+                  </ul>
+                </li>
+                <li>
+                  Players reuse winning randomness values:
+                  <ul>
+                    <li>
+                      Player randomness is mixed with a nonce to prevent reuse.
+                    </li>
+                  </ul>
+                </li>
+                <li>
+                  Houses pause to avoid receiving incoming winning bets:
+                  <ul>
+                    <li>
+                      House pauses only take effect 250 blocks after being
+                      initiated, so a house would need to prevent a bet from being
+                      mined for 250 blocks to avoid it.
+                    </li>
+                  </ul>
+                </li>
+                <li>
+                  Houses bet against themselves to have insufficient balance
+                  for incoming winning bets:
+                  <ul>
+                    <li>
+                      If a house's balance falls below its max loss when a bet
+                      is placed, this is recorded in last low balance time.
+                      Players should be cautious with houses that have recently had
+                      low balance.
+                    </li>
+                  </ul>
+                </li>
+              </ul>
+              See <a href="https://etherscan.io/address/0x30410fab6d367e11839c00ad93eb357e3066ada8" target="_blank">contract</a> for details and implementation.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Contract info -->
+    <div class="row eth_div">
+      <div class="col-xl round-div">
+        <h3>
+         <a class="clickable" onclick="$('#state_info').toggle();">
+           Toggle Contract State
+         </a>
+       </h3>
+        <div class="row" id="state_info">
+          <div class="col-xl">
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item">Bets placed:
+               <em id="contract_bets"></em></li>
+              <li class="list-group-item">Houses:
+               <em id="num_houses"></em></li>
+              <li class="list-group-item">Last bet timestamp:
+               <em id="last_bet_timestamp"></em></li>
+              <li class="list-group-item">Game balance:
+               <em id="reserved_eth"></em></li>
+              <li class="list-group-item">Sale price:
+               <em id="sale_price"></em></li>
+              <li class="list-group-item">Contract balance:
+               <em id="contract_balance"></em></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="d-grid gap-2">
+      <button class="btn btn-primary" type="button" onclick="CheckBrowser();"
+       id="connect_button">
+        <span class="spinner-border spinner-border-sm" role="status"
+         aria-hidden="true" id="connect_spinner"></span>
+        <span class="sr-only">Connect to contract</span>
+      </button>
+    </div>
+
+    <!-- Controls -->
+    <div class="row round-div eth_div">
+      <!-- Choose control type -->
+      <div class="col-sm">
+        <button type="button" class="btn btn-info" data-bs-toggle="modal"
+         data-bs-target="#viewBetModal">
+          View Bet
+        </button>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+         data-bs-target="#withdrawModal" id="withdraw_button">
+          Withdraw ETH
+        </button>
+      </div>
+
+      <div class="col-xl" id="player_controls">
+        <button type="button" class="btn btn-info" onclick="CreatePlayer();"
+         id="create_player">
+          <span class="spinner-border spinner-border-sm" role="status"
+           aria-hidden="true" id="create_player_spinner"></span>
+          <span class="sr-only">Create Player</span>
+        </button>
+
+        <!-- Interaction buttons -->
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+         data-bs-target="#betModal" onclick="PopulateBet();" id="place_bet">
+          Place Bet
+        </button>
+      </div>
+      <!-- Control panel -->
+      <div class="col-xl">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+         data-bs-target="#houseModal" id="adjust_house">
+          Create House
+        </button>
+        <button type="button" class="btn btn-info house_control"
+         data-bs-toggle="modal" data-bs-target="#fundModal" id="fund_house">
+          Fund House
+        </button>
+        <button type="button" class="btn btn-info house_control"
+         onclick="TogglePauseHouse();" id="pause_house">
+          <span class="spinner-border spinner-border-sm" role="status"
+           aria-hidden="true" id="pause_spinner"></span>
+          <span class="sr-only" id="pause_text">Pause House</span>
+        </button>
+
+      </div>
+    </div>
+
+    <!-- Player and House Info -->
+    <div class="row eth_div">
+      <div class="col-xl round-div">
+        <h3>Player Info</h3>
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item">Balance:
+            <em id="player_balance"></em>
+          </li>
+          <li class="list-group-item">Active bets:
+            <em id="player_active_bets"></em>
+          </li>
+          <li class="list-group-item">Winnings:
+            <em id="player_winnings"></em>
+          </li>
+          <li class="list-group-item">Last nonce:
+            <em id="player_last_nonce"></em>
+          </li>
+        </ul>
+        <div class="input-group mb-3">
+          <span class="input-group-text" id="edit_player">
+            <a class="clickable" onclick="EditPlayer();">
+              Edit address
+            </a>
+          </span>
+          <span class="input-group-text" id="set_player">
+            <a class="clickable" onclick="SelectPlayer();">
+              Set address
+            </a>
+          </span>
+          <input type="text" pattern="^(0x)?[0-9a-fA-F]{40}$" id="player_address"
+           class="form-control" placeholder="Player address">
+          <span class="input-group-text" id="auto_player">
+            <a class="clickable"
+             onclick="SetAddressFromMetamask('#player_address');">
+              Auto
+            </a>
+          </span>
+        </div>
+      </div>
+      <div class="col-xl round-div">
+        <h3>House Info</h3>
+        <p>
+          <a data-bs-toggle="modal" class="clickable" onclick="ShowModulus();"
+           data-bs-target="#modulusModal">
+           View Modulus
+          </a>
+        </p>
+        <div class="row">
+          <div class="col-6" style="text-align: left;">
+            <a class="nav-link clickable" onclick="PreviousHouse();"
+             id="prev_house">
+              &lt;&nbsp;&lt;&nbsp;&nbsp;Previous
+            </a>
+          </div>
+          <div class="col-6" style="text-align: right;">
+            <a class="nav-link clickable" onclick="NextHouse();" id="next_house">
+              Next&nbsp;&nbsp;&gt;&nbsp;&gt;
+            </a>
+          </div>
+        </div>
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item">Balance:
+            <em id="house_balance"></em>
+          </li>
+          <li class="list-group-item">Bet balance:
+            <em id="house_bet_balance"></em>
+          </li>
+          <li class="list-group-item">Active bets:
+            <em id="house_active_bets"></em>
+          </li>
+          <li class="list-group-item">Completed bets:
+            <em id="house_completed"></em>
+          </li>
+          <li class="list-group-item">Next pause:
+            <em id="house_pause"></em>
+          </li>
+          <li class="list-group-item">Max loss:
+            <em id="house_max_loss"></em>
+          </li>
+          <li class="list-group-item">Min bet:
+            <em id="house_min_bet"></em>
+          </li>
+          <li class="list-group-item">Last low balance:
+            <em id="house_low_balance"></em>
+          </li>
+          <li class="list-group-item">Oldest bet:
+            <em id="house_first_bet"></em>
+          </li>
+        </ul>
+        <div class="input-group mb-3">
+          <span class="input-group-text" id="edit_house">
+            <a class="clickable" onclick="EditHouse();">
+              Edit address
+            </a>
+          </span>
+          <span class="input-group-text" id="set_house">
+            <a class="clickable" onclick="SelectHouse();">
+              Set address
+            </a>
+          </span>
+          <input type="text" pattern="^(0x)?[0-9a-fA-F]{40}$" id="house_address"
+           class="form-control" placeholder="House address or index">
+          <span class="input-group-text" id="auto_house">
+            <a class="clickable"
+             onclick="SetAddressFromMetamask('#house_address');">
+              Auto
+            </a>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-xl" id="footer">
+      <p>
+        <a data-bs-toggle="modal" class="clickable"
+         data-bs-target="#donateModal" title="Dev wallet">
+         <b>Donate ETH:</b> 0x225507634D2a85Dd060a50f5868C4D19dFb2e775
+        </a>
+        <b>XMR</b>: 44stpSTahwN85Yqk7tSjiCB7TYPzA9YdWSR4NqRbrqAb3fMrbsr2SAC7NrtAwEnQtJVFgyXdfyuovWy8THv6EYQcKVNNVDr
+        <br />
+        <b>BTC</b>: bc1qzhfv9kjuhsg08fm35wh549je9zfujnqtk0hs80
+      </p>
+    </div>
+  </div>
+
+
+<!-- MODALS -->
+  <!-- Place bet modal -->
+  <div class="modal fade" id="betModal" tabindex="-1" role="dialog"
+   aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Place Bet</h5>
+          <button type="button" class="close modal_close" data-bs-dismiss="modal"
+           aria-label="Close"><span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="input-group mb-3">
+            <span class="input-group-text">Bet</span>
+            <input type="number" id="bet_amount" class="form-control"
+             placeholder="Bet size">
+            <span class="input-group-text">ETH</span>
+          </div>
+          <div class="input-group mb-3">
+            <span class="input-group-text">Odds</span>
+            <input type="number" id="odds" class="form-control">
+             <span class="input-group-text">&nbsp;to&nbsp;&nbsp;1</span>
+          </div>
+          <div class="input-group mb-3">
+            <span class="input-group-text">Nonce</span>
+            <input type="number" id="bet_nonce" class="form-control">
+          </div>
+          <div class="input-group mb-3">
+            <span class="input-group-text">Top Up</span>
+            <input type="text" id="bet_top_up" class="form-control"
+             placeholder="Optionally add funds">
+            <span class="input-group-text">ETH</span>
+          </div>
+          <div class="input-group mb-3">
+            <span class="input-group-text">Randomness</span>
+            <input type="text" id="randomness" class="form-control" disabled>
+            <span class="input-group-text clickable" onclick="NewRandom();">
+              Regenerate
+            </span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" onclick="PlaceBet();"
+           id="place_bet_button">
+            <span class="spinner-border spinner-border-sm" role="status"
+             aria-hidden="true" id="place_bet_spinner"></span>
+            <span class="sr-only">Place Bet</span>
+          </button>
+          <button type="button" class="btn btn-secondary modal_close"
+           data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Open/Adjust house modal -->
+  <div class="modal fade" id="houseModal" tabindex="-1" role="dialog"
+   aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Manage House</h5>
+          <button type="button" class="close modal_close" data-bs-dismiss="modal"
+           aria-label="Close"><span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="input-group mb-3">
+            <span class="input-group-text">Modulus</span>
+            <input type="text" id="modulus_input" class="form-control">
+          </div>
+          <div class="input-group mb-3">
+            <span class="input-group-text">Max Loss</span>
+            <input type="text" id="max_loss_input" class="form-control">
+            <span class="input-group-text">ETH</span>
+          </div>
+          <div class="input-group mb-3">
+            <span class="input-group-text">Min bet</span>
+            <input type="text" id="min_bet_input" class="form-control">
+            <span class="input-group-text">ETH</span>
+          </div>
+          <div class="input-group mb-3">
+            <span class="input-group-text">Take</span>
+            <input type="number" id="take_input" class="form-control"
+             placeholder="House take &#37; (0.01&#37; increments)">
+            <span class="input-group-text" id='take_span'>&#37;</span>
+          </div>
+          <div class="input-group mb-3">
+            <span class="input-group-text" id="house_fund_label">
+              Funding
+            </span>
+            <input type="text" id="house_adjust_fund_input" class="form-control">
+            <span class="input-group-text">ETH</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" id="house_button"
+           onclick="OpenOrAdjustHouse();">
+            <span class="spinner-border spinner-border-sm" role="status"
+             aria-hidden="true" id="house_spinner"></span>
+            <span class="sr-only" id="house_button_text">Open House</span>
+          </button>
+          <button type="button" class="btn btn-secondary modal_close"
+           data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Donate modal -->
+  <div class="modal fade" id="donateModal" tabindex="-1" role="dialog"
+   aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Donate to Developer</h5>
+          <button type="button" class="close modal_close" data-bs-dismiss="modal"
+           aria-label="Close"><span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="input-group mb-3">
+            <span class="input-group-text">Amount (ETH)</span>
+            <input type="text" pattern="^(0?\.\d+|[1-9]\d*(\.\d+))$"
+             class="form-control" id="donate_amount">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" onclick="Donate();"
+           id="donate_button">
+            <span class="spinner-border spinner-border-sm" role="status"
+             aria-hidden="true" id="donate_spinner"></span>
+            <span class="sr-only">Donate</span>
+          </button>
+          <button type="button" class="btn btn-secondary modal_close"
+           data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- viewBetModal also allows deciding and forcing bets -->
+  <div class="modal fade" id="viewBetModal" tabindex="-1" role="dialog"
+   aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modal_bet_id">Bet Info</h5>
+          <button type="button" class="close modal_close" data-bs-dismiss="modal"
+           aria-label="Close"><span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="input-group mb-3">
+            <span class="input-group-text" id="edit_bet">
+              <a class="clickable" onclick="EditBet();">
+                Edit ID
+              </a>
+            </span>
+            <span class="input-group-text" id="set_bet">
+              <a class="clickable" onclick="SelectBet();">
+                Select
+              </a>
+            </span>
+            <input type="text" id="bet_id" class="form-control">
+            <span class="input-group-text" id="auto_oldest_bet">
+              <a class="clickable"
+               onclick="SetOldestBet();">
+                Oldest House Bet
+              </a>
+            </span>
+          </div>
+          <div class="row">
+            <div class="col-6" style="text-align: left;">
+              <a class="nav-link clickable" onclick="PreviousBet();"
+               id="prev_bet">
+                &lt;&nbsp;&lt;&nbsp;&nbsp;Previous
+              </a>
+            </div>
+            <div class="col-6" style="text-align: right;">
+              <a class="nav-link clickable" onclick="NextBet();" id="next_bet">
+                Next&nbsp;&nbsp;&gt;&nbsp;&gt;
+              </a>
+            </div>
+          </div>
+
+          <ul class="list-group list-group-flush" id="bet_info">
+            <li class="list-group-item">Age:
+              <em id="bet_age"></em>
+            </li>
+            <li class="list-group-item">Odds:
+              <em id="bet_odds"></em>
+            </li>
+            <li class="list-group-item">Price:
+              <em id="bet_price"></em>
+            </li>
+            <li class="list-group-item">Pot:
+              <em id="bet_pot"></em>
+            </li>
+            <li class="list-group-item">Player:
+              <em id="bet_player"></em>
+            </li>
+            <li class="list-group-item">House:
+              <em id="bet_house"></em>
+            </li>
+            <li class="list-group-item">Randomness:
+              <em id="bet_randomness"></em>
+          </ul>
+          <div class="input-group mb-3" id="signed_div">
+            <span class="input-group-text">Signed</span>
+            <input type="text" class="form-control" id="signed_randomness">
+            <span class="input-group-text" id="auto_oldest_bet">
+              <a class="clickable"
+               onclick="SignBet();">
+                Sign with key
+              </a>
+            </span>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" onclick="DecideBet();"
+           id="decide_bet">
+            <span class="spinner-border spinner-border-sm" role="status"
+             aria-hidden="true" id="decide_spinner"></span>
+            <span class="sr-only">Decide bet</span>
+          </button>
+          <button type="button" class="btn btn-primary" onclick="ForceBet();"
+           id="force_bet">
+            <span class="spinner-border spinner-border-sm" role="status"
+             aria-hidden="true" id="force_spinner"></span>
+            <span class="sr-only">Force bet</span>
+          </button>
+          <button type="button" class="btn btn-secondary modal_close"
+           data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Withdraw modal -->
+  <div class="modal fade" id="withdrawModal" tabindex="-1" role="dialog"
+   aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Withdraw Funds</h5>
+          <button type="button" class="close modal_close" data-bs-dismiss="modal"
+           aria-label="Close"><span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="input-group mb-3" id="signed_div">
+            <span class="input-group-text">Amount</span>
+            <input type="text" class="form-control" id="withdraw_amount">
+            <span class="input-group-text">ETH</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary"
+           onclick="HouseWithdraw();" id="house_withdraw">
+            <span class="spinner-border spinner-border-sm" role="status"
+             aria-hidden="true" id="house_withdraw_spinner"></span>
+            <span class="sr-only">House withdraw</span>
+          </button>
+          <button type="button" class="btn btn-primary"
+           onclick="PlayerWithdraw();" id="player_withdraw">
+            <span class="spinner-border spinner-border-sm" role="status"
+             aria-hidden="true" id="player_withdraw_spinner"></span>
+            <span class="sr-only">Player withdraw</span>
+          </button>
+          <button type="button" class="btn btn-secondary modal_close"
+           data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fund house modal -->
+  <div class="modal fade" id="fundModal" tabindex="-1" role="dialog"
+   aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Add Funds</h5>
+          <button type="button" class="close modal_close" data-bs-dismiss="modal"
+           aria-label="Close"><span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="input-group mb-3">
+            <span class="input-group-text">Amount</span>
+            <input type="text" class="form-control" id="fund_amount">
+            <span class="input-group-text">ETH</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary"
+           onclick="FundHouse();" id="fund_house_button">
+            <span class="spinner-border spinner-border-sm" role="status"
+             aria-hidden="true" id="fund_house_spinner"></span>
+            <span class="sr-only">Add funds</span>
+          </button>
+          <button type="button" class="btn btn-secondary modal_close"
+           data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Show modulus modal -->
+  <div class="modal fade" id="modulusModal" tabindex="-1" role="dialog"
+   aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">House Modulus</h5>
+          <button type="button" class="close modal_close" data-bs-dismiss="modal"
+           aria-label="Close"><span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p>Modulus as array:</p>
+          <p id='modulus_array' class='modulus'></p>
+          <br />
+          <p>Modulus as integer:</p>
+          <p id='modulus_integer' class='modulus'></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal_close"
+           data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
