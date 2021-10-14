@@ -19,7 +19,7 @@ const MAX_256 = BigInt(2) ** BigInt(256) - BigInt(1);
 const ADDRESS_RXP = /^(0x)?[0-9a-fA-F]{40}$/;
 const CONFIRM_BLOCKS = 12;
 
-const CONTRACT_ADDRESS = '0x90264Fe0d57258bF1773a2A8E4853bE3bc800a18';
+const CONTRACT_ADDRESS = '0x30410fab6d367e11839c00ad93eb357e3066ada8';
 const DEV_ADDRESS = '0x225507634D2a85Dd060a50f5868C4D19dFb2e775';
 const DISCLAIMER = 'By continuing to use this site, you affirm that you are '
                  + 'over 21 years of age and are not in a jurisdiction '
