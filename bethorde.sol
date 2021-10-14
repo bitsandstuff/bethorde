@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.7;
 
 /** @title BetHorde: decentralised bets.
   * @author u/bethorde
-  * @notice Simple decentralised bets. No trust. No oracles. Provably random.
+  * @notice Truly decentralised bets. No trust. No oracles. Provably random.
   *
   *  Anyone can be a player or a house. Randomness through RSA signatures.
   *
@@ -129,15 +129,15 @@ contract BetHorde {
     require(amount * (odds - 1) <= houses[house].balance, "Exceeds house balance");
     state.bet_counter++;
     bets[state.bet_counter] = Bet({
+      house: house,
       price_gwei: uint56(amount_gwei),
-      odds: uint32(odds),
       timestamp: uint32(block.timestamp),
       player: msg.sender,
-      house: house,
-      randomness: keccak256(abi.encode(players[msg.sender].creation_block, nonce,
-                            msg.sender, randomness)),
       previous_house_bet: houses[house].last_bet,
-      next_house_bet: 0
+      next_house_bet: 0,
+      odds: uint32(odds),
+      randomness: keccak256(abi.encode(players[msg.sender].creation_block, nonce,
+                            msg.sender, randomness))
     });
     if(houses[house].first_bet == 0) {
       houses[house].first_bet = state.bet_counter;
